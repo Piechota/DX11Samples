@@ -1,4 +1,4 @@
-#include "CommonWindows.h"
+#include "Common.h"
 #include "Timer.h"
 
 double Timer::_secondsPerCount = 0.;

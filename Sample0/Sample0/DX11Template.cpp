@@ -1,6 +1,5 @@
-#include "CommonWindows.h"
-#include "CommonDirectX.h"
-#include "CommonSTL.h"
+#include "Common.h"
+#include "CommonRendering.h"
 #include "CommonManagers.h"
 #include "Input.h"
 

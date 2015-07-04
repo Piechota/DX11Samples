@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CommonWindows.h"
+#include "Common.h"
 
 class Input
 {
