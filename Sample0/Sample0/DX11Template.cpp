@@ -1,6 +1,7 @@
 #include "CommonWindows.h"
 #include "CommonDirectX.h"
 #include "CommonSTL.h"
+#include "CommonManagers.h"
 #include "Input.h"
 
 HWND mainWin;
@@ -182,9 +183,18 @@ bool InitDirectX()
 int Run()
 {
 	MSG msg = { 0 };
-
+	unsigned int frameCount = 0;
+	float time = Timer::GetTimeFromBeginning();
 	while (msg.message != WM_QUIT)
 	{
+		Timer::Tick();
+		++frameCount;
+		if (Timer::GetTimeFromBeginning() - time >= 1.f)
+		{
+			time = Timer::GetTimeFromBeginning();
+			SetWindowText(mainWin, std::to_wstring(frameCount).c_str());
+			frameCount = 0;
+		}
 		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -204,5 +214,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 		return 0;
 	if (!InitDirectX())
 		return 0;
+	Timer::Setup();
 	return Run();
 }

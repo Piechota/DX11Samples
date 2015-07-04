@@ -72,12 +72,15 @@
   <ItemGroup>
     <ClCompile Include="DX11Template.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommonDirectX.h" />
+    <ClInclude Include="CommonManagers.h" />
     <ClInclude Include="CommonSTL.h" />
     <ClInclude Include="CommonWindows.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
