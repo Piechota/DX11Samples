@@ -3,10 +3,22 @@
 #include "CommonManagers.h"
 #include "Input.h"
 
-HWND mainWin;
+HINSTANCE _hAppInst;
+HWND _mainWin;
+UINT _4xMsaaQuality;
+
+ID3D11Device* _d3dDevice;
+ID3D11DeviceContext* _d3dImmediateContext;
+IDXGISwapChain* _SwapChain;
+ID3D11Texture2D* _DepthStencilBuffer;
+ID3D11RenderTargetView* _RenderTargetView;
+ID3D11DepthStencilView* _DepthStencilView;
+D3D11_VIEWPORT _ScreenViewport;
 
 bool InitWindowsApp(HINSTANCE instanceHandle, int show)
 {
+	_hAppInst = instanceHandle;
+
 	WNDCLASS wc;
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	wc.cbClsExtra = 0;
@@ -25,7 +37,7 @@ bool InitWindowsApp(HINSTANCE instanceHandle, int show)
 		return false;
 	}
 
-	mainWin = CreateWindow(
+	_mainWin = CreateWindow(
 		L"DX1Samples",
 		L"DX1Samples",
 		WS_OVERLAPPEDWINDOW,
@@ -39,15 +51,13 @@ bool InitWindowsApp(HINSTANCE instanceHandle, int show)
 		0
 		);
 
-	if (mainWin == 0)
+	if (_mainWin == 0)
 	{
 		MessageBox(0, L"CreateWindow FAILED", 0, 0);
 		return false;
 	}
 
-	ShowWindow(mainWin, show);
-	UpdateWindow(mainWin);
-
+	ShowWindow(_mainWin, show);
 	return true;
 }
 bool InitDirectX()
@@ -58,8 +68,6 @@ bool InitDirectX()
 #endif
 
 	D3D_FEATURE_LEVEL featureLevel;
-	ID3D11Device* md3dDevice;
-	ID3D11DeviceContext* md3dImmediateContext;
 	HRESULT hr = D3D11CreateDevice(
 		0,
 		D3D_DRIVER_TYPE_HARDWARE,
@@ -67,9 +75,9 @@ bool InitDirectX()
 		createDeviceFlags,
 		0, 0,
 		D3D11_SDK_VERSION,
-		&md3dDevice,
+		&_d3dDevice,
 		&featureLevel,
-		&md3dImmediateContext
+		&_d3dImmediateContext
 		);
 
 	if (FAILED(hr))
@@ -83,9 +91,8 @@ bool InitDirectX()
 		return false;
 	}
 
-	UINT m4xMsaaQuality;
-	md3dDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 4, &m4xMsaaQuality);
-	assert(m4xMsaaQuality > 0);
+	_d3dDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 4, &_4xMsaaQuality);
+	assert(_4xMsaaQuality > 0);
 
 	DXGI_SWAP_CHAIN_DESC scd;
 	scd.BufferDesc.Width = screenWidth;
@@ -99,7 +106,7 @@ bool InitDirectX()
 	if (mEnable4xMsaa)
 	{
 		scd.SampleDesc.Count = 4;
-		scd.SampleDesc.Quality = m4xMsaaQuality-1;
+		scd.SampleDesc.Quality = _4xMsaaQuality-1;
 	}
 	else
 	{
@@ -109,13 +116,13 @@ bool InitDirectX()
 
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.BufferCount = 1;
-	scd.OutputWindow = mainWin;
+	scd.OutputWindow = _mainWin;
 	scd.Windowed = true;
 	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	scd.Flags = 0;
 
 	IDXGIDevice* dxgiDevice = nullptr;
-	md3dDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice);
+	_d3dDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice);
 
 	IDXGIAdapter* dxgiAdapter = nullptr;
 	dxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void**)&dxgiAdapter);
@@ -123,17 +130,15 @@ bool InitDirectX()
 	IDXGIFactory* dxgiFactory = nullptr;
 	dxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&dxgiFactory);
 
-	IDXGISwapChain* mSwapChain;
-	hr = dxgiFactory->CreateSwapChain(md3dDevice, &scd, &mSwapChain);
+	hr = dxgiFactory->CreateSwapChain(_d3dDevice, &scd, &_SwapChain);
 
 	dxgiDevice->Release();
 	dxgiAdapter->Release();
 	dxgiFactory->Release();
 
-	ID3D11RenderTargetView* mRenderTargetView;
 	ID3D11Texture2D* backBuffer;
-	mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
-	md3dDevice->CreateRenderTargetView(backBuffer, 0, &mRenderTargetView);
+	_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
+	_d3dDevice->CreateRenderTargetView(backBuffer, 0, &_RenderTargetView);
 	backBuffer->Release();
 
 	D3D11_TEXTURE2D_DESC depthStencilDesc;
@@ -146,7 +151,7 @@ bool InitDirectX()
 	if (mEnable4xMsaa)
 	{
 		depthStencilDesc.SampleDesc.Count = 4;
-		depthStencilDesc.SampleDesc.Quality = m4xMsaaQuality - 1;
+		depthStencilDesc.SampleDesc.Quality = _4xMsaaQuality - 1;
 	}
 	else
 	{
@@ -158,25 +163,31 @@ bool InitDirectX()
 	depthStencilDesc.CPUAccessFlags = 0;
 	depthStencilDesc.MiscFlags = 0;
 
-	ID3D11Texture2D* mDepthStencilBuffer;
-	ID3D11DepthStencilView* mDepthStencilView;
+	_d3dDevice->CreateTexture2D(&depthStencilDesc, 0, &_DepthStencilBuffer);
+	_d3dDevice->CreateDepthStencilView(_DepthStencilBuffer, 0, &_DepthStencilView);
 
-	md3dDevice->CreateTexture2D(&depthStencilDesc, 0, &mDepthStencilBuffer);
-	md3dDevice->CreateDepthStencilView(mDepthStencilBuffer, 0, &mDepthStencilView);
+	_d3dImmediateContext->OMSetRenderTargets(1, &_RenderTargetView, _DepthStencilView);
 
-	md3dImmediateContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+	_ScreenViewport.TopLeftX = 0.f;
+	_ScreenViewport.TopLeftY = 0.f;
+	_ScreenViewport.Width = static_cast<float>(screenWidth);
+	_ScreenViewport.Height = static_cast<float>(screenHeight);
+	_ScreenViewport.MinDepth = 0.f;
+	_ScreenViewport.MaxDepth = 1.f;
 
-	D3D11_VIEWPORT vp;
-	vp.TopLeftX = 0.f;
-	vp.TopLeftY = 0.f;
-	vp.Width = static_cast<float>(screenWidth);
-	vp.Height = static_cast<float>(screenHeight);
-	vp.MinDepth = 0.f;
-	vp.MaxDepth = 1.f;
-
-	md3dImmediateContext->RSSetViewports(1, &vp);
+	_d3dImmediateContext->RSSetViewports(1, &_ScreenViewport);
 
 	return true;
+}
+
+void Clear()
+{
+	_d3dDevice->Release();
+	_d3dImmediateContext->Release();
+	_SwapChain->Release();
+	_DepthStencilBuffer->Release();
+	_RenderTargetView->Release();
+	_DepthStencilView->Release();
 }
 
 int Run()
@@ -191,9 +202,10 @@ int Run()
 		if (Timer::GetTimeFromBeginning() - time >= 1.f)
 		{
 			time = Timer::GetTimeFromBeginning();
-			SetWindowText(mainWin, std::to_wstring(frameCount).c_str());
+			SetWindowText(_mainWin, std::to_wstring(frameCount).c_str());
 			frameCount = 0;
 		}
+
 		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -202,8 +214,13 @@ int Run()
 		{
 			//GAME LOOP
 		}
+
+		_d3dImmediateContext->ClearRenderTargetView(_RenderTargetView, Colors::Blue);
+		_d3dImmediateContext->ClearDepthStencilView(_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+		_SwapChain->Present(0, 0);
 	}
 
+	Clear();
 	return (int)msg.wParam;
 }
 
