@@ -1,6 +1,7 @@
 #include "Common.h"
 #include "CommonRendering.h"
 #include "CommonManagers.h"
+#include "CommonMath.h"
 #include "Input.h"
 
 HINSTANCE _hAppInst;
@@ -190,11 +191,165 @@ void Clear()
 	_DepthStencilView->Release();
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+
+struct Vertex
+{
+	XMFLOAT3 pos;
+	XMFLOAT4 color;
+};
+
+ID3D11Buffer* _boxVB;
+ID3D11Buffer* _boxIB;
+ID3DX11Effect* _FX;
+
+ID3DX11EffectTechnique* _tech;
+ID3DX11EffectMatrixVariable* _mvpMatrixFX;
+
+ID3D11InputLayout* _inputLayout;
+
+XMFLOAT4X4 _world;
+XMFLOAT4X4 _view;
+XMFLOAT4X4 _projection;
+
+void PreDrawInstructions()
+{
+	XMStoreFloat4x4(&_world, XMMatrixIdentity());
+	XMStoreFloat4x4(&_view, XMMatrixIdentity());
+	XMStoreFloat4x4(&_projection, XMMatrixIdentity());
+
+	Vertex vertices[]=
+	{
+		{ XMFLOAT3(-1.f, -1.f, -1.f), XMFLOAT4(Colors::White) },
+		{ XMFLOAT3(-1.f, +1.f, -1.f), XMFLOAT4(Colors::Red) },
+		{ XMFLOAT3(+1.f, +1.f, -1.f), XMFLOAT4(Colors::Blue) },
+		{ XMFLOAT3(+1.f, -1.f, -1.f), XMFLOAT4(Colors::Green) },
+		{ XMFLOAT3(-1.f, -1.f, +1.f), XMFLOAT4(Colors::Yellow) },
+		{ XMFLOAT3(-1.f, +1.f, +1.f), XMFLOAT4(Colors::Green) },
+		{ XMFLOAT3(+1.f, +1.f, +1.f), XMFLOAT4(Colors::Black) },
+		{ XMFLOAT3(+1.f, -1.f, +1.f), XMFLOAT4(Colors::Red) }
+	};
+
+	D3D11_BUFFER_DESC vbd;
+	vbd.Usage = D3D11_USAGE_IMMUTABLE;
+	vbd.ByteWidth = sizeof(Vertex) * 8;
+	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbd.CPUAccessFlags = 0;
+	vbd.MiscFlags = 0;
+	vbd.StructureByteStride = 0;
+	D3D11_SUBRESOURCE_DATA vinitData;
+	vinitData.pSysMem = vertices;
+	_d3dDevice->CreateBuffer(&vbd, &vinitData, &_boxVB);
+
+	UINT indices[]=
+	{
+		0, 1, 2,
+		0, 2, 3,
+
+		4, 6, 5,
+		4, 7, 6,
+
+		4, 5, 1,
+		4, 1, 0,
+
+		3, 2, 6,
+		3, 6, 7,
+
+		1, 5, 6,
+		1, 6, 2,
+
+		4, 0, 3,
+		4, 3, 7
+	};
+
+	D3D11_BUFFER_DESC ibd;
+	ibd.Usage = D3D11_USAGE_IMMUTABLE;
+	ibd.ByteWidth = sizeof(UINT) * 36;
+	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	ibd.CPUAccessFlags = 0;
+	ibd.MiscFlags = 0;
+	ibd.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA iinitData;
+	iinitData.pSysMem = indices;
+	_d3dDevice->CreateBuffer(&ibd, &iinitData, &_boxIB);
+
+	DWORD shaderFlags = 0;
+#if defined(DEBUG) || defined(_DEBUG)
+	shaderFlags |= D3D10_SHADER_DEBUG;
+	shaderFlags |= D3D10_SHADER_SKIP_OPTIMIZATION;
+#endif
+
+	ID3D10Blob* compiledShader = nullptr;
+	ID3D10Blob* compilationMsgs = nullptr;
+	HRESULT hr = D3DX11CompileFromFile(L"C:/Users/Konrad/Documents/DX11Samples/Sample0/Sample0/FX/color.fx", 0, 0, 0, "fx_5_0", shaderFlags, 0, 0, &compiledShader, &compilationMsgs, 0);
+	if (compilationMsgs != 0)
+	{
+		MessageBox(0, (LPCWSTR)compilationMsgs->GetBufferPointer(), 0, 0);
+		compilationMsgs->Release();
+	}
+	if (FAILED(hr))
+		DXTrace(__FILE__, (DWORD)__LINE__, hr, L"D3DX11CompileFromFIle", true);
+
+	D3DX11CreateEffectFromMemory(
+		compiledShader->GetBufferPointer(),
+		compiledShader->GetBufferSize(),
+		0, _d3dDevice, &_FX);
+
+	compiledShader->Release();
+
+	_tech = _FX->GetTechniqueByName("Default");
+	_mvpMatrixFX = _FX->GetVariableByName("gWorldViewProj")->AsMatrix();
+
+
+	D3D11_INPUT_ELEMENT_DESC vertexDesc[]=
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	D3DX11_PASS_DESC passDesc;
+	_tech->GetPassByIndex(0)->GetDesc(&passDesc);
+	_d3dDevice->CreateInputLayout(vertexDesc, 2, passDesc.pIAInputSignature, passDesc.IAInputSignatureSize, &_inputLayout);
+}
+
+void DrawInstructions()
+{
+	_d3dImmediateContext->ClearRenderTargetView(_RenderTargetView, Colors::Black);
+	_d3dImmediateContext->ClearDepthStencilView(_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+
+	_d3dImmediateContext->IASetInputLayout(_inputLayout);
+	_d3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+	_d3dImmediateContext->IASetVertexBuffers(0, 1, &_boxVB, &stride, &offset);
+	_d3dImmediateContext->IASetIndexBuffer(_boxIB, DXGI_FORMAT_R32_UINT, 0);
+
+	XMMATRIX mvpMatrix = XMMatrixTranslation(0.f, 0.f, -5.f) * XMMatrixPerspectiveFovRH(60.f, 1280.f/720.f, 0.001f, 100.f);
+
+	_mvpMatrixFX->SetMatrix(reinterpret_cast<float*>(&mvpMatrix));
+
+	_tech->GetPassByIndex(0)->Apply(0, _d3dImmediateContext);
+	_d3dImmediateContext->DrawIndexed(36, 0, 0);
+
+	_SwapChain->Present(0, 0);
+}
+void PostDrawInstructions()
+{
+	_boxVB->Release();
+	_boxIB->Release();
+	_FX->Release();
+	_inputLayout->Release();
+}
+/////////////////////////////////////////////////////////////////////////////////////
+
 int Run()
 {
 	MSG msg = { 0 };
 	unsigned int frameCount = 0;
 	float time = Timer::GetTimeFromBeginning();
+	PreDrawInstructions();
 	while (msg.message != WM_QUIT)
 	{
 		Timer::Tick();
@@ -211,15 +366,9 @@ int Run()
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		{
-			//GAME LOOP
-		}
-
-		_d3dImmediateContext->ClearRenderTargetView(_RenderTargetView, Colors::Blue);
-		_d3dImmediateContext->ClearDepthStencilView(_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
-		_SwapChain->Present(0, 0);
+		DrawInstructions();
 	}
-
+	PostDrawInstructions();
 	Clear();
 	return (int)msg.wParam;
 }
