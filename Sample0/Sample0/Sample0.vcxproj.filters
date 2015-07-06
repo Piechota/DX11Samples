@@ -46,6 +46,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="FX\color.fx" />
+    <None Include="color.hlsl">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

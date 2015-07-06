@@ -191,6 +191,17 @@ void Clear()
 	_DepthStencilView->Release();
 }
 
+void PrintErrorBlob(ID3DBlob* errorBlob)
+{
+	std::string str;
+	str.append("******SHADER ERROR**********\n");
+	str.append((char*)errorBlob->GetBufferPointer());
+	str.append("\n****************************\n");
+
+	OutputDebugStringA(str.c_str());
+	errorBlob->Release();
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 
 struct Vertex
@@ -201,18 +212,17 @@ struct Vertex
 
 ID3D11Buffer* _boxVB;
 ID3D11Buffer* _boxIB;
-ID3DX11Effect* _FX;
-
-ID3DX11EffectTechnique* _tech;
-ID3DX11EffectMatrixVariable* _mvpMatrixFX;
 
 ID3D11InputLayout* _inputLayout;
+
+ID3D11VertexShader* _vertexShader;
+ID3D11PixelShader* _pixelShader;
 
 XMFLOAT4X4 _world;
 XMFLOAT4X4 _view;
 XMFLOAT4X4 _projection;
 
-void PreDrawInstructions()
+bool PreDrawInstructions()
 {
 	XMStoreFloat4x4(&_world, XMMatrixIdentity());
 	XMStoreFloat4x4(&_view, XMMatrixIdentity());
@@ -274,43 +284,58 @@ void PreDrawInstructions()
 	iinitData.pSysMem = indices;
 	_d3dDevice->CreateBuffer(&ibd, &iinitData, &_boxIB);
 
+	ID3DBlob* codeBlob;
+	ID3DBlob* errorBlob;
+
 	DWORD shaderFlags = 0;
 #if defined(DEBUG) || defined(_DEBUG)
 	shaderFlags |= D3D10_SHADER_DEBUG;
 	shaderFlags |= D3D10_SHADER_SKIP_OPTIMIZATION;
 #endif
 
-	ID3D10Blob* compiledShader = nullptr;
-	ID3D10Blob* compilationMsgs = nullptr;
-	HRESULT hr = D3DX11CompileFromFile(L"C:/Users/Konrad/Documents/DX11Samples/Sample0/Sample0/FX/color.fx", 0, 0, 0, "fx_5_0", shaderFlags, 0, 0, &compiledShader, &compilationMsgs, 0);
-	if (compilationMsgs != 0)
+	HRESULT hr = D3DCompileFromFile(
+		L"C:/Users/Konrad/Documents/DX11Samples/Sample0/Sample0/color.hlsl",
+		NULL,	
+		NULL,
+		"VS",
+		"vs_5_0",
+		shaderFlags,
+		0,
+		&codeBlob,
+		&errorBlob
+		);
+	if (!FAILED(hr))
 	{
-		MessageBox(0, (LPCWSTR)compilationMsgs->GetBufferPointer(), 0, 0);
-		compilationMsgs->Release();
+		_d3dDevice->CreateVertexShader(codeBlob->GetBufferPointer(), codeBlob->GetBufferSize(), nullptr, &_vertexShader);
+		codeBlob->Release();
 	}
-	if (FAILED(hr))
-		DXTrace(__FILE__, (DWORD)__LINE__, hr, L"D3DX11CompileFromFIle", true);
-
-	D3DX11CreateEffectFromMemory(
-		compiledShader->GetBufferPointer(),
-		compiledShader->GetBufferSize(),
-		0, _d3dDevice, &_FX);
-
-	compiledShader->Release();
-
-	_tech = _FX->GetTechniqueByName("Default");
-	_mvpMatrixFX = _FX->GetVariableByName("gWorldViewProj")->AsMatrix();
-
-
-	D3D11_INPUT_ELEMENT_DESC vertexDesc[]=
+	else
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-
-	D3DX11_PASS_DESC passDesc;
-	_tech->GetPassByIndex(0)->GetDesc(&passDesc);
-	_d3dDevice->CreateInputLayout(vertexDesc, 2, passDesc.pIAInputSignature, passDesc.IAInputSignatureSize, &_inputLayout);
+		PrintErrorBlob(errorBlob);
+		return false;
+	}
+	hr = D3DCompileFromFile(
+		L"C:/Users/Konrad/Documents/DX11Samples/Sample0/Sample0/color.hlsl",
+		NULL,
+		NULL,
+		"PS",
+		"ps_5_0",
+		shaderFlags,
+		0,
+		&codeBlob,
+		&errorBlob
+		);
+	if (!FAILED(hr))
+	{
+		_d3dDevice->CreatePixelShader(codeBlob->GetBufferPointer(), codeBlob->GetBufferSize(), nullptr, &_pixelShader);
+		codeBlob->Release();
+	}
+	else
+	{
+		PrintErrorBlob(errorBlob);
+		return false;
+	}
+	return true;
 }
 
 void DrawInstructions()
@@ -328,19 +353,18 @@ void DrawInstructions()
 
 	XMMATRIX mvpMatrix = XMMatrixTranslation(0.f, 0.f, -5.f) * XMMatrixPerspectiveFovRH(60.f, 1280.f/720.f, 0.001f, 100.f);
 
-	_mvpMatrixFX->SetMatrix(reinterpret_cast<float*>(&mvpMatrix));
-
-	_tech->GetPassByIndex(0)->Apply(0, _d3dImmediateContext);
 	_d3dImmediateContext->DrawIndexed(36, 0, 0);
 
 	_SwapChain->Present(0, 0);
 }
 void PostDrawInstructions()
 {
+	if (_boxVB != nullptr)
 	_boxVB->Release();
-	_boxIB->Release();
-	_FX->Release();
-	_inputLayout->Release();
+	if (_boxIB != nullptr)
+		_boxIB->Release();
+	if (_inputLayout != nullptr)
+		_inputLayout->Release();
 }
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -349,7 +373,12 @@ int Run()
 	MSG msg = { 0 };
 	unsigned int frameCount = 0;
 	float time = Timer::GetTimeFromBeginning();
-	PreDrawInstructions();
+	if (!PreDrawInstructions())
+	{
+		PostDrawInstructions();
+		Clear();
+		return -1;
+	}
 	while (msg.message != WM_QUIT)
 	{
 		Timer::Tick();

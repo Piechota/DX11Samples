@@ -1,9 +1,7 @@
 #pragma once
 
 #include <d3d11_2.h>
-#include <D3DX11.h>
-#include <DxErr.h>
-#include <d3dx11effect.h>
+#include <D3Dcompiler.h>
 
 namespace Colors
 {
