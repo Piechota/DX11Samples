@@ -335,6 +335,10 @@ int Run()
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+		else
+		{
+
+		}
 
 		//GAME LOOP
 	}
