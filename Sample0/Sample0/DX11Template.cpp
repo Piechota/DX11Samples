@@ -18,6 +18,12 @@ HRESULT g_hr;
 
 ID3D11Buffer*			g_d3dVertexBuffer		= nullptr;
 ID3D11Buffer*			g_d3dIndexBuffer		= nullptr;
+ID3D11Buffer*			g_d3dConstantBuffer		= nullptr;
+
+ID3D11VertexShader*		g_d3dVertexShader		= nullptr;
+ID3D11PixelShader*		g_d3dPixelShader		= nullptr;
+
+ID3D11InputLayout*		g_d3dInputLayout		= nullptr;
 
 struct VertexPosColor
 {
@@ -243,11 +249,70 @@ bool CreateVertexIndexBuffers()
 
 	return true;
 }
+bool CreateConstantBuffer()
+{
+	D3D11_BUFFER_DESC constantBufferDesc;
+	SecureZeroMemory(&constantBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
+	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantBufferDesc.ByteWidth = sizeof(XMMATRIX);
+	constantBufferDesc.CPUAccessFlags = 0;
+	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;	///>>>>>>>>>>>>>>>>>>>????????????????????????
+
+	g_hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dConstantBuffer);
+	if (FAILED(g_hr)) return false;
+
+	return true;
+}
+bool LoadCompileShaders()
+{
+	UINT shaderFlags = 0;
+
+#if DEBUG || _DEBUG
+	shaderFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+	ID3DBlob* vertexShaderBlob;
+
+	g_hr = D3DCompileFromFile(
+		L"C:/Users/Konrad/Documents/DX11Samples/Sample0/Sample0/color.hlsl", NULL, NULL, "VS", "vs_5_0",
+		shaderFlags, 0, &vertexShaderBlob, NULL);
+	if (FAILED(g_hr)) return false;
+
+	g_hr = g_d3dDevice->CreateVertexShader(vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), nullptr, &g_d3dVertexShader);
+	if (FAILED(g_hr)) return false;
+
+	D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[]=
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor, color), D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	g_hr = g_d3dDevice->CreateInputLayout(vertexLayoutDesc, _countof(vertexLayoutDesc), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &g_d3dInputLayout);
+	if (FAILED(g_hr)) return false;
+
+	SafeRelease(vertexShaderBlob);
+
+	ID3DBlob* pixelShaderBlob;
+
+	g_hr = D3DCompileFromFile(
+		L"C:/Users/Konrad/Documents/DX11Samples/Sample0/Sample0/color.hlsl", NULL, NULL, "PS", "ps_5_0",
+		shaderFlags, 0, &pixelShaderBlob, NULL);
+	if (FAILED(g_hr)) return false;
+	g_hr = g_d3dDevice->CreatePixelShader(pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize(), nullptr, &g_d3dPixelShader);
+	if (FAILED(g_hr)) return false;
+
+	SafeRelease(pixelShaderBlob);
+
+	return true;
+}
 void Clear()
 {
+	SafeRelease(g_d3dConstantBuffer);
 	SafeRelease(g_d3dIndexBuffer);
 	SafeRelease(g_d3dVertexBuffer);
+	SafeRelease(g_d3dVertexShader);
+	SafeRelease(g_d3dPixelShader);
 }
 
 int Run()
@@ -284,6 +349,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 	if (!InitDirectX())
 		return 0;
 	if (!CreateVertexIndexBuffers)
+		return 0;
+	if (!CreateConstantBuffer())
+		return 0;
+	if (!LoadCompileShaders())
 		return 0;
 	Timer::Setup();
 	return Run();
