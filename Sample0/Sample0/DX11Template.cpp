@@ -320,7 +320,9 @@ bool LoadCompileShaders()
 }
 void FillConstantBuffer()
 {
-	XMMATRIX wvp = XMMatrixTranslation(0.f, 0.f, -5.f) * XMMatrixPerspectiveFovLH(60.f, static_cast<float>(screenHeight)/static_cast<float>(screenWidth), 0.001f, 30.f);
+	float aHW = static_cast<float>(screenHeight) / static_cast<float>(screenWidth);
+	float aWH = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
+	XMMATRIX wvp = XMMatrixTranslation(1.f, 1.f, 5.f) * XMMatrixOrthographicLH(5.f, 5.f * aHW, 0.1f, 100.f);
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffer, 0, nullptr, &wvp, 0, 0);
 }
 void Render()
@@ -408,7 +410,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 		return 0;
 	if (!InitDirectX())
 		return 0;
-	if (!CreateVertexIndexBuffers)
+	if (!CreateVertexIndexBuffers())
 		return 0;
 	if (!CreateConstantBuffer())
 		return 0;
