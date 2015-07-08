@@ -5,14 +5,15 @@
 #include "Input.h"
 
 HWND g_mainWin;
-ID3D11DeviceContext*	g_d3dDeviceContext		= nullptr;
-ID3D11Device*			g_d3dDevice				= nullptr;
-IDXGISwapChain*			g_d3dSwapChain			= nullptr;
-ID3D11RenderTargetView* g_d3dRenderTargetView	= nullptr;
-ID3D11Texture2D*		g_d3dDepthStencilBuffer = nullptr;
-ID3D11DepthStencilView* g_d3dDepthStencilView	= nullptr;
-ID3D11RasterizerState*	g_d3dRasterizerState	= nullptr;
-D3D11_VIEWPORT			g_Viewport;
+ID3D11DeviceContext*		g_d3dDeviceContext		= nullptr;
+ID3D11Device*				g_d3dDevice				= nullptr;
+IDXGISwapChain*				g_d3dSwapChain			= nullptr;
+ID3D11RenderTargetView*		g_d3dRenderTargetView	= nullptr;
+ID3D11Texture2D*			g_d3dDepthStencilBuffer = nullptr;
+ID3D11DepthStencilView*		g_d3dDepthStencilView	= nullptr;
+ID3D11DepthStencilState*	g_d3dDepthStencilState	= nullptr;
+ID3D11RasterizerState*		g_d3dRasterizerState	= nullptr;
+D3D11_VIEWPORT				g_Viewport;
 
 HRESULT g_hr;
 
@@ -178,6 +179,17 @@ bool InitSwapChainBuffer()
 }
 bool SetupDepthStencilState()
 {
+	D3D11_DEPTH_STENCIL_DESC depthStencilStateDesc;
+	SecureZeroMemory(&depthStencilStateDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
+
+	depthStencilStateDesc.DepthEnable = TRUE;
+	depthStencilStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilStateDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthStencilStateDesc.StencilEnable = FALSE;
+
+	g_hr = g_d3dDevice->CreateDepthStencilState(&depthStencilStateDesc, &g_d3dDepthStencilState);
+	if (FAILED(g_hr)) return false;
+
 	D3D11_RASTERIZER_DESC rasterizerDesc;
 	SecureZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
 
@@ -306,13 +318,56 @@ bool LoadCompileShaders()
 
 	return true;
 }
+void FillConstantBuffer()
+{
+	XMMATRIX wvp = XMMatrixTranslation(0.f, 0.f, -5.f) * XMMatrixPerspectiveFovLH(60.f, static_cast<float>(screenHeight)/static_cast<float>(screenWidth), 0.001f, 30.f);
+	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffer, 0, nullptr, &wvp, 0, 0);
+}
+void Render()
+{
+	g_d3dDeviceContext->ClearRenderTargetView(g_d3dRenderTargetView, Colors::Blue);
+	g_d3dDeviceContext->ClearDepthStencilView(g_d3dDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+
+	const UINT vertexStride = sizeof(VertexPosColor);
+	const UINT offset = 0;
+
+	g_d3dDeviceContext->IASetVertexBuffers(0, 1, &g_d3dVertexBuffer, &vertexStride, &offset);
+	g_d3dDeviceContext->IASetInputLayout(g_d3dInputLayout);
+	g_d3dDeviceContext->IASetIndexBuffer(g_d3dIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	g_d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	g_d3dDeviceContext->VSSetShader(g_d3dVertexShader, nullptr, 0);
+	g_d3dDeviceContext->VSSetConstantBuffers(0, 1, &g_d3dConstantBuffer);
+
+	g_d3dDeviceContext->RSSetState(g_d3dRasterizerState);
+	g_d3dDeviceContext->RSSetViewports(1, &g_Viewport);
+
+	g_d3dDeviceContext->PSSetShader(g_d3dPixelShader, nullptr, 0);
+
+	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
+	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
+
+	g_d3dDeviceContext->DrawIndexed(_countof(g_Indicies), 0, 0);
+
+	g_d3dSwapChain->Present(0, 0);
+}
 void Clear()
 {
 	SafeRelease(g_d3dConstantBuffer);
 	SafeRelease(g_d3dIndexBuffer);
 	SafeRelease(g_d3dVertexBuffer);
+	SafeRelease(g_d3dInputLayout);
 	SafeRelease(g_d3dVertexShader);
 	SafeRelease(g_d3dPixelShader);
+
+	SafeRelease(g_d3dDepthStencilView);
+	SafeRelease(g_d3dRenderTargetView);
+	SafeRelease(g_d3dDepthStencilBuffer);
+	SafeRelease(g_d3dDepthStencilState);
+	SafeRelease(g_d3dRasterizerState);
+	SafeRelease(g_d3dSwapChain);
+	SafeRelease(g_d3dDeviceContext);
+	SafeRelease(g_d3dDevice);
 }
 
 int Run()
@@ -337,7 +392,8 @@ int Run()
 		}
 		else
 		{
-
+			FillConstantBuffer();
+			Render();
 		}
 
 		//GAME LOOP
