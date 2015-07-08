@@ -18,7 +18,6 @@ VSO VS(VSI input)
 {
 	VSO OUT;
 
-	//OUT.position = mul(float4(input.position, 1.f), wvpMatrix);
 	OUT.position = mul(wvpMatrix, float4(input.position, 1.f));
 	OUT.color = float4(input.color, 1.f);
 
@@ -27,5 +26,5 @@ VSO VS(VSI input)
 
 float4 PS(VSO IN) : SV_TARGET
 {
-	return float4(1.f, 0.f, 0.f, 1.f);
+	return IN.color;
 }

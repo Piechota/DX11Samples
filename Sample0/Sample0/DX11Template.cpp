@@ -322,7 +322,7 @@ void FillConstantBuffer()
 {
 	float aHW = static_cast<float>(screenHeight) / static_cast<float>(screenWidth);
 	float aWH = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
-	XMMATRIX wvp = XMMatrixTranslation(1.f, 1.f, 5.f) * XMMatrixOrthographicLH(5.f, 5.f * aHW, 0.1f, 100.f);
+	XMMATRIX wvp = XMMatrixTranslation(-5.f, 2.f, 10.f) * XMMatrixPerspectiveFovLH(XMConvertToRadians(45.f), aWH, 0.1f, 100.f);
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffer, 0, nullptr, &wvp, 0, 0);
 }
 void Render()
