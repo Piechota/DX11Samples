@@ -318,17 +318,13 @@ bool LoadCompileShaders()
 
 	return true;
 }
-void FillConstantBuffer()
+
+void OneTimeInstruction()
 {
-	float aHW = static_cast<float>(screenHeight) / static_cast<float>(screenWidth);
-	float aWH = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
-	XMMATRIX wvp = XMMatrixTranslation(-5.f, 2.f, 10.f) * XMMatrixPerspectiveFovLH(XMConvertToRadians(45.f), aWH, 0.1f, 100.f);
+	static const float aWH = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
+
+	XMMATRIX wvp = XMMatrixRotationY(XMConvertToRadians(20.f)) * XMMatrixTranslation(0.f, 0.f, 5.f) * XMMatrixPerspectiveFovLH(XMConvertToRadians(45.f), aWH, 0.1f, 100.f);
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffer, 0, nullptr, &wvp, 0, 0);
-}
-void Render()
-{
-	g_d3dDeviceContext->ClearRenderTargetView(g_d3dRenderTargetView, Colors::Blue);
-	g_d3dDeviceContext->ClearDepthStencilView(g_d3dDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
 	const UINT vertexStride = sizeof(VertexPosColor);
 	const UINT offset = 0;
@@ -348,6 +344,16 @@ void Render()
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
+}
+
+void FillConstantBuffer()
+{
+	
+}
+void Render()
+{
+	g_d3dDeviceContext->ClearRenderTargetView(g_d3dRenderTargetView, Colors::Blue);
+	g_d3dDeviceContext->ClearDepthStencilView(g_d3dDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
 	g_d3dDeviceContext->DrawIndexed(_countof(g_Indicies), 0, 0);
 
@@ -377,6 +383,7 @@ int Run()
 	MSG msg = { 0 };
 	unsigned int frameCount = 0;
 	float time = Timer::GetTimeFromBeginning();
+	OneTimeInstruction();
 	while (msg.message != WM_QUIT)
 	{
 		Timer::Tick();
@@ -397,8 +404,6 @@ int Run()
 			FillConstantBuffer();
 			Render();
 		}
-
-		//GAME LOOP
 	}
 	Clear();
 	return (int)msg.wParam;
