@@ -220,16 +220,18 @@ void SetupViewport()
 }
 bool InitDirectX()
 {
-	if (!InitDeviceAndSwapChain()) return false;
-	if (!InitSwapChainBuffer()) return false;
-	if (!SetupDepthStencilState()) return false;
+	if (!InitDeviceAndSwapChain() ||
+		!InitSwapChainBuffer() ||
+		!SetupDepthStencilState()) 
+		return false;
 
 	SetupViewport();
 
 	return true;
 }
 
-bool CreateVertexIndexBuffers()
+/*				CODE PER PROJECT			*/
+bool LoadResources()
 {
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	SecureZeroMemory(&vertexBufferDesc, sizeof(D3D11_BUFFER_DESC));
@@ -261,7 +263,7 @@ bool CreateVertexIndexBuffers()
 
 	return true;
 }
-bool CreateConstantBuffer()
+bool CreateBuffers()
 {
 	D3D11_BUFFER_DESC constantBufferDesc;
 	SecureZeroMemory(&constantBufferDesc, sizeof(D3D11_BUFFER_DESC));
@@ -276,7 +278,7 @@ bool CreateConstantBuffer()
 
 	return true;
 }
-bool LoadCompileShaders()
+bool LoadShaders()
 {
 	UINT shaderFlags = 0;
 
@@ -294,7 +296,7 @@ bool LoadCompileShaders()
 	g_hr = g_d3dDevice->CreateVertexShader(vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), nullptr, &g_d3dVertexShader);
 	if (FAILED(g_hr)) return false;
 
-	D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[]=
+	D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor, color), D3D11_INPUT_PER_VERTEX_DATA, 0 }
@@ -319,7 +321,7 @@ bool LoadCompileShaders()
 	return true;
 }
 
-void OneTimeInstruction()
+void PreRendering()
 {
 	static const float aWH = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
 
@@ -345,12 +347,7 @@ void OneTimeInstruction()
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
 }
-
-void FillConstantBuffer()
-{
-	
-}
-void Render()
+void Rendering()
 {
 	g_d3dDeviceContext->ClearRenderTargetView(g_d3dRenderTargetView, Colors::Blue);
 	g_d3dDeviceContext->ClearDepthStencilView(g_d3dDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
@@ -359,7 +356,7 @@ void Render()
 
 	g_d3dSwapChain->Present(0, 0);
 }
-void Clear()
+void PostRendering()
 {
 	SafeRelease(g_d3dConstantBuffer);
 	SafeRelease(g_d3dIndexBuffer);
@@ -377,13 +374,14 @@ void Clear()
 	SafeRelease(g_d3dDeviceContext);
 	SafeRelease(g_d3dDevice);
 }
+/*				CODE PER PROJECT			*/
 
 int Run()
 {
 	MSG msg = { 0 };
 	unsigned int frameCount = 0;
 	float time = Timer::GetTimeFromBeginning();
-	OneTimeInstruction();
+	PreRendering();
 	while (msg.message != WM_QUIT)
 	{
 		Timer::Tick();
@@ -401,25 +399,22 @@ int Run()
 		}
 		else
 		{
-			FillConstantBuffer();
-			Render();
+			Rendering();
 		}
 	}
-	Clear();
+	PostRendering();
 	return (int)msg.wParam;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, int nShowCmd)
 {
-	if (!InitWindowsApp(hInstance, nShowCmd))
+	if (!InitWindowsApp(hInstance, nShowCmd) ||
+		!InitDirectX())
 		return 0;
-	if (!InitDirectX())
-		return 0;
-	if (!CreateVertexIndexBuffers())
-		return 0;
-	if (!CreateConstantBuffer())
-		return 0;
-	if (!LoadCompileShaders())
+
+	if (!LoadResources() ||
+		!CreateBuffers() ||
+		!LoadShaders())
 		return 0;
 	Timer::Setup();
 	return Run();
