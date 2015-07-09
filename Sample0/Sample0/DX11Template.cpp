@@ -2,7 +2,6 @@
 #include "CommonRendering.h"
 #include "CommonManagers.h"
 #include "CommonMath.h"
-#include "Input.h"
 
 HWND g_mainWin;
 ID3D11DeviceContext*		g_d3dDeviceContext		= nullptr;
@@ -25,6 +24,10 @@ ID3D11VertexShader*		g_d3dVertexShader		= nullptr;
 ID3D11PixelShader*		g_d3dPixelShader		= nullptr;
 
 ID3D11InputLayout*		g_d3dInputLayout		= nullptr;
+
+XMMATRIX g_worldMatrix;
+XMMATRIX g_viewMatrix;
+XMMATRIX g_projectionMatrix;
 
 struct VertexPosColor
 {
@@ -56,6 +59,8 @@ WORD g_Indicies[36] =
 
 bool InitWindowsApp(HINSTANCE instanceHandle, int show)
 {
+	g_viewMatrix = XMMatrixIdentity();
+	Input::viewMatrix = &g_viewMatrix;
 	WNDCLASS wc;
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	wc.cbClsExtra = 0;
@@ -325,8 +330,9 @@ void PreRendering()
 {
 	static const float aWH = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
 
-	XMMATRIX wvp = XMMatrixRotationY(XMConvertToRadians(20.f)) * XMMatrixTranslation(0.f, 0.f, 5.f) * XMMatrixPerspectiveFovLH(XMConvertToRadians(45.f), aWH, 0.1f, 100.f);
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffer, 0, nullptr, &wvp, 0, 0);
+	g_worldMatrix = XMMatrixRotationY(XMConvertToRadians(20.f));
+	g_projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(45.f), aWH, 0.1f, 100.f);
+
 
 	const UINT vertexStride = sizeof(VertexPosColor);
 	const UINT offset = 0;
@@ -351,6 +357,9 @@ void Rendering()
 {
 	g_d3dDeviceContext->ClearRenderTargetView(g_d3dRenderTargetView, Colors::Blue);
 	g_d3dDeviceContext->ClearDepthStencilView(g_d3dDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+
+	XMMATRIX wvp = g_worldMatrix * g_viewMatrix * g_projectionMatrix;
+	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffer, 0, nullptr, &wvp, 0, 0);
 
 	g_d3dDeviceContext->DrawIndexed(_countof(g_Indicies), 0, 0);
 
@@ -392,6 +401,8 @@ int Run()
 			SetWindowText(g_mainWin, std::to_wstring(frameCount).c_str());
 			frameCount = 0;
 		}
+		Input::Update();
+		
 		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
