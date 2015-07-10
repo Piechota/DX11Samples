@@ -76,7 +76,7 @@ void Input::Update()
 	camPosition.z += XMVectorGetZ(direction);
 	camPosition.y += XMVectorGetY(direction);
 
-	MSG junkMSG;
+	/*MSG junkMSG;
 	POINT mousePos;
 
 	GetCursorPos(&mousePos);
@@ -94,7 +94,7 @@ void Input::Update()
 	mousePos.y = screenHeight / 2;
 	ClientToScreen(g_mainWin, &mousePos);
 	SetCursorPos(mousePos.x, mousePos.y);
-	PeekMessage(&junkMSG, g_mainWin, 0, 0, PM_REMOVE | PM_NOYIELD);
+	PeekMessage(&junkMSG, g_mainWin, 0, 0, PM_REMOVE | PM_NOYIELD);*/
 
 	*viewMatrix = XMMatrixInverse(nullptr, XMMatrixRotationQuaternion(camRotation) * XMMatrixTranslation(camPosition.x, camPosition.y, camPosition.z));
 }

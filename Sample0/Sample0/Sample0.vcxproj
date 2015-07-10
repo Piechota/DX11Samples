@@ -40,6 +40,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
+    <IncludePath>C:\Users\Konrad\Downloads\DirectXTK\Inc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -74,11 +75,49 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\AlphaTestEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\BasicEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\BinaryReader.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\CommonStates.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\DDSTextureLoader.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\DGSLEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\DGSLEffectFactory.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\DualTextureEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\EffectCommon.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\EffectFactory.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\EnvironmentMapEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\GamePad.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\GeometricPrimitive.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\Keyboard.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\Model.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\ModelLoadCMO.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\ModelLoadSDKMESH.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\ModelLoadVBO.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\Mouse.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\pch.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\PrimitiveBatch.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\ScreenGrab.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\SimpleMath.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\SkinnedEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\SpriteBatch.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\SpriteFont.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\VertexTypes.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\WICTextureLoader.cpp" />
     <ClCompile Include="DX11Template.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\AlignedNew.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\Bezier.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\BinaryReader.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\ConstantBuffer.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\dds.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\DemandCreate.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\EffectCommon.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\pch.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\PlatformHelpers.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\SharedResourcePool.h" />
     <ClInclude Include="CommonMath.h" />
     <ClInclude Include="CommonRendering.h" />
     <ClInclude Include="CommonManagers.h" />
@@ -87,11 +126,18 @@
     <ClInclude Include="Timer.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\..\Downloads\DirectXTK\Src\TeapotData.inc" />
     <None Include="color.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <FileType>Document</FileType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resource\Brick.dds" />
+    <Image Include="Resource\brick_albedo.dds">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

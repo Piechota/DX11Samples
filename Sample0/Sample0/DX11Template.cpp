@@ -16,14 +16,21 @@ D3D11_VIEWPORT				g_Viewport;
 
 HRESULT g_hr;
 
-ID3D11Buffer*			g_d3dVertexBuffer		= nullptr;
-ID3D11Buffer*			g_d3dIndexBuffer		= nullptr;
-ID3D11Buffer*			g_d3dConstantBuffer		= nullptr;
+ID3D11Buffer*				g_d3dVertexBuffer		= nullptr;
+ID3D11Buffer*				g_d3dIndexBuffer		= nullptr;
+ID3D11Buffer*				g_d3dConstantBuffer		= nullptr;
 
-ID3D11VertexShader*		g_d3dVertexShader		= nullptr;
-ID3D11PixelShader*		g_d3dPixelShader		= nullptr;
+ID3D11Buffer*				g_d3dLightBuffer		= nullptr;
 
-ID3D11InputLayout*		g_d3dInputLayout		= nullptr;
+ID3D11Resource*				g_diffuseTex			= nullptr;
+ID3D11ShaderResourceView*	g_diffuseView			= nullptr;
+
+ID3D11SamplerState*			g_d3dSamplerState		= nullptr;
+
+ID3D11VertexShader*			g_d3dVertexShader		= nullptr;
+ID3D11PixelShader*			g_d3dPixelShader		= nullptr;
+
+ID3D11InputLayout*			g_d3dInputLayout		= nullptr;
 
 XMMATRIX g_worldMatrix;
 XMMATRIX g_viewMatrix;
@@ -33,18 +40,20 @@ struct VertexPosColor
 {
 	XMFLOAT3 position;
 	XMFLOAT3 color;
+	XMFLOAT3 normal;
+	XMFLOAT2 texCoord;
 };
 
 VertexPosColor g_Vertices[8] =
 {
-	{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) }, // 0
-	{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, // 1
-	{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, // 2
-	{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, // 3
-	{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) }, // 4
-	{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) }, // 5
-	{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) }, // 6
-	{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) }  // 7
+	{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(-0.57735f, -0.57735f, -0.57735f), XMFLOAT2(0.f, 1.f) }, // 0
+	{ XMFLOAT3(-1.0f, +1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT3(-0.57735f, +0.57735f, -0.57735f), XMFLOAT2(0.f, 0.f) }, // 1
+	{ XMFLOAT3(+1.0f, +1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT3(+0.57735f, +0.57735f, -0.57735f), XMFLOAT2(1.f, 0.f) }, // 2
+	{ XMFLOAT3(+1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f), XMFLOAT3(+0.57735f, -0.57735f, -0.57735f), XMFLOAT2(1.f, 1.f) }, // 3
+	{ XMFLOAT3(-1.0f, -1.0f, +1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(-0.57735f, -0.57735f, +0.57735f), XMFLOAT2(1.f, 1.f) }, // 4
+	{ XMFLOAT3(-1.0f, +1.0f, +1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f), XMFLOAT3(-0.57735f, +0.57735f, +0.57735f), XMFLOAT2(1.f, 0.f) }, // 5
+	{ XMFLOAT3(+1.0f, +1.0f, +1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(+0.57735f, +0.57735f, +0.57735f), XMFLOAT2(0.f, 0.f) }, // 6
+	{ XMFLOAT3(+1.0f, -1.0f, +1.0f), XMFLOAT3(1.0f, 0.0f, 1.0f), XMFLOAT3(+0.57735f, -0.57735f, +0.57735f), XMFLOAT2(0.f, 1.f) }  // 7
 };
 
 WORD g_Indicies[36] =
@@ -236,6 +245,15 @@ bool InitDirectX()
 }
 
 /*				CODE PER PROJECT			*/
+struct PointLight
+{
+	__declspec(align(16))
+		XMFLOAT3 position;
+	__declspec(align(16))
+		XMFLOAT3 color;
+		float linearAtt;
+};
+
 bool LoadResources()
 {
 	D3D11_BUFFER_DESC vertexBufferDesc;
@@ -266,6 +284,12 @@ bool LoadResources()
 	g_hr = g_d3dDevice->CreateBuffer(&indexBufferDesc, &resourceData, &g_d3dIndexBuffer);
 	if (FAILED(g_hr)) return false;
 
+	g_hr = CreateDDSTextureFromFileEx(
+		g_d3dDevice, L"C:/Users/Konrad/Documents/DX11Samples/Sample0/Sample0/Resource/brick_albedo.dds",
+		0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, 
+		&g_diffuseTex, &g_diffuseView);
+
+	if (FAILED(g_hr)) return false;
 	return true;
 }
 bool CreateBuffers()
@@ -274,15 +298,43 @@ bool CreateBuffers()
 	SecureZeroMemory(&constantBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	constantBufferDesc.ByteWidth = sizeof(XMMATRIX);
-	constantBufferDesc.CPUAccessFlags = 0;
-	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;	///>>>>>>>>>>>>>>>>>>>????????????????????????
+	constantBufferDesc.ByteWidth = sizeof(XMMATRIX) * 2;
+	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 
 	g_hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dConstantBuffer);
 	if (FAILED(g_hr)) return false;
 
+	SecureZeroMemory(&constantBufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantBufferDesc.ByteWidth = sizeof(PointLight);
+	constantBufferDesc.CPUAccessFlags = 0;
+	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	g_hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dLightBuffer);
+	if (FAILED(g_hr)) return false;
+
 	return true;
 }
+
+bool CreateSampler()
+{
+	D3D11_SAMPLER_DESC samplerDesc;
+	SecureZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
+
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	g_hr = g_d3dDevice->CreateSamplerState(&samplerDesc, &g_d3dSamplerState);
+	if (FAILED(g_hr)) return false;
+
+	return true;
+}
+
 bool LoadShaders()
 {
 	UINT shaderFlags = 0;
@@ -304,7 +356,9 @@ bool LoadShaders()
 	D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor, color), D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor, color), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor, normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(VertexPosColor, texCoord), D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
 	g_hr = g_d3dDevice->CreateInputLayout(vertexLayoutDesc, _countof(vertexLayoutDesc), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &g_d3dInputLayout);
@@ -345,6 +399,8 @@ void PreRendering()
 	g_d3dDeviceContext->VSSetShader(g_d3dVertexShader, nullptr, 0);
 	g_d3dDeviceContext->VSSetConstantBuffers(0, 1, &g_d3dConstantBuffer);
 
+	g_d3dDeviceContext->PSSetConstantBuffers(1, 1, &g_d3dLightBuffer);
+
 	g_d3dDeviceContext->RSSetState(g_d3dRasterizerState);
 	g_d3dDeviceContext->RSSetViewports(1, &g_Viewport);
 
@@ -352,14 +408,32 @@ void PreRendering()
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
+
+	g_d3dDeviceContext->PSSetShaderResources(0, 1, &g_diffuseView);
+
+	PointLight p0;
+	p0.position = XMFLOAT3(0.f, 0.f, -3.f);
+	p0.color = XMFLOAT3(1.f, 1.f, 1.f);
+	p0.linearAtt = 1.f;
+
+	g_d3dDeviceContext->UpdateSubresource(g_d3dLightBuffer, 0, nullptr, &p0, 0, 0);
+	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
 }
 void Rendering()
 {
 	g_d3dDeviceContext->ClearRenderTargetView(g_d3dRenderTargetView, Colors::Blue);
 	g_d3dDeviceContext->ClearDepthStencilView(g_d3dDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
-	XMMATRIX wvp = g_worldMatrix * g_viewMatrix * g_projectionMatrix;
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffer, 0, nullptr, &wvp, 0, 0);
+	XMMATRIX matrices[2];
+	matrices[0] = g_worldMatrix * g_viewMatrix * g_projectionMatrix;
+	matrices[1] = g_worldMatrix;
+
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	SecureZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+
+	g_d3dDeviceContext->Map(g_d3dConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, matrices, sizeof(matrices));
+	g_d3dDeviceContext->Unmap(g_d3dConstantBuffer, 0);
 
 	g_d3dDeviceContext->DrawIndexed(_countof(g_Indicies), 0, 0);
 
@@ -368,11 +442,17 @@ void Rendering()
 void PostRendering()
 {
 	SafeRelease(g_d3dConstantBuffer);
+	SafeRelease(g_d3dLightBuffer);
 	SafeRelease(g_d3dIndexBuffer);
 	SafeRelease(g_d3dVertexBuffer);
 	SafeRelease(g_d3dInputLayout);
 	SafeRelease(g_d3dVertexShader);
 	SafeRelease(g_d3dPixelShader);
+
+	SafeRelease(g_d3dSamplerState);
+
+	SafeRelease(g_diffuseTex);
+	SafeRelease(g_diffuseView);
 
 	SafeRelease(g_d3dDepthStencilView);
 	SafeRelease(g_d3dRenderTargetView);
@@ -425,6 +505,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 
 	if (!LoadResources() ||
 		!CreateBuffers() ||
+		!CreateSampler() ||
 		!LoadShaders())
 		return 0;
 	Timer::Setup();
