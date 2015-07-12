@@ -162,6 +162,18 @@
     <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\SharedResourcePool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Resources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalVariables.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WinInit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D3DInit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="color.hlsl">
@@ -172,10 +184,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resource\brick_albedo.dds">
+    <Image Include="..\..\Resources\Brick.dds">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="Resource\Brick.dds">
+    <Image Include="..\..\Resources\brick_albedo.dds">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

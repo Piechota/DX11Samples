@@ -13,6 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EE2ACCC2-9DC4-4BAA-AE8B-2F5C240879CD}</ProjectGuid>
     <RootNamespace>Sample0</RootNamespace>
+    <ProjectName>Sample0</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -122,8 +123,12 @@
     <ClInclude Include="CommonRendering.h" />
     <ClInclude Include="CommonManagers.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="D3DInit.h" />
+    <ClInclude Include="GlobalVariables.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Resources.h" />
     <ClInclude Include="Timer.h" />
+    <ClInclude Include="WinInit.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\Downloads\DirectXTK\Src\TeapotData.inc" />
@@ -134,10 +139,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resource\Brick.dds" />
-    <Image Include="Resource\brick_albedo.dds">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
+    <Image Include="..\..\Resources\Brick.dds" />
+    <Image Include="..\..\Resources\brick_albedo.dds" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
