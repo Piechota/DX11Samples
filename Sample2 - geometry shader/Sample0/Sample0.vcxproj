@@ -1,0 +1,148 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{EE2ACCC2-9DC4-4BAA-AE8B-2F5C240879CD}</ProjectGuid>
+    <RootNamespace>Sample0</RootNamespace>
+    <ProjectName>Sample2 - geometry shader</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
+    <IncludePath>C:\Users\Konrad\Downloads\DirectXTK\Inc;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>d3d11.lib;D3DCompiler.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <FxCompile />
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\AlphaTestEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\BasicEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\BinaryReader.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\CommonStates.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\DDSTextureLoader.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\DGSLEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\DGSLEffectFactory.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\DualTextureEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\EffectCommon.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\EffectFactory.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\EnvironmentMapEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\GamePad.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\GeometricPrimitive.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\Keyboard.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\Model.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\ModelLoadCMO.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\ModelLoadSDKMESH.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\ModelLoadVBO.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\Mouse.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\pch.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\PrimitiveBatch.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\ScreenGrab.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\SimpleMath.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\SkinnedEffect.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\SpriteBatch.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\SpriteFont.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\VertexTypes.cpp" />
+    <ClCompile Include="..\..\..\..\Downloads\DirectXTK\Src\WICTextureLoader.cpp" />
+    <ClCompile Include="DX11Template.cpp" />
+    <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Timer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\AlignedNew.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\Bezier.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\BinaryReader.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\ConstantBuffer.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\dds.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\DemandCreate.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\EffectCommon.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\pch.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\PlatformHelpers.h" />
+    <ClInclude Include="..\..\..\..\Downloads\DirectXTK\Src\SharedResourcePool.h" />
+    <ClInclude Include="CommonMath.h" />
+    <ClInclude Include="CommonRendering.h" />
+    <ClInclude Include="CommonManagers.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="D3DInit.h" />
+    <ClInclude Include="GlobalVariables.h" />
+    <ClInclude Include="Input.h" />
+    <ClInclude Include="Resources.h" />
+    <ClInclude Include="Timer.h" />
+    <ClInclude Include="WinInit.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\Downloads\DirectXTK\Src\TeapotData.inc" />
+    <None Include="color.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\Resources\Brick.dds" />
+    <Image Include="..\..\Resources\brick_albedo.dds" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
