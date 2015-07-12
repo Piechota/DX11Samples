@@ -307,7 +307,9 @@ void PreSceneDraw()
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, nullptr);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dSceneDepthStencilState, 1);
-	g_d3dDeviceContext->PSSetShaderResources(1, 1, &g_d3dDepthSRV);
+	g_d3dDeviceContext->PSSetShaderResources(1, 1, &g_d3dgBufferSRV[0]);
+	g_d3dDeviceContext->PSSetShaderResources(2, 1, &g_d3dgBufferSRV[1]);
+	g_d3dDeviceContext->PSSetShaderResources(3, 1, &g_d3dDepthSRV);
 }
 void DrawBox()
 {

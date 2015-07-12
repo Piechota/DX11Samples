@@ -1,4 +1,6 @@
 Texture2D diffuseTex : register(t1);
+Texture2D normalTex : register(t2);
+Texture2D depthTex : register(t3);
 SamplerState samLinear : register(s0);
 
 struct VSI
@@ -23,6 +25,5 @@ VSO VS(VSI IN)
 }
 float4 PS(VSO IN) : SV_TARGET
 {
-	float d = diffuseTex.Sample(samLinear, IN.uv).r;
-	return d;
+	return diffuseTex.Sample(samLinear, IN.uv);
 }
