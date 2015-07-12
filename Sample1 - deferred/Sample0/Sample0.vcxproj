@@ -123,8 +123,12 @@
     <ClInclude Include="CommonRendering.h" />
     <ClInclude Include="CommonManagers.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="D3DInit.h" />
+    <ClInclude Include="GlobalVariables.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Resources.h" />
     <ClInclude Include="Timer.h" />
+    <ClInclude Include="WinInit.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\Downloads\DirectXTK\Src\TeapotData.inc" />
@@ -137,6 +141,13 @@
   <ItemGroup>
     <Image Include="..\..\Resources\Brick.dds" />
     <Image Include="..\..\Resources\brick_albedo.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SceneDraw.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
