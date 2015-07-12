@@ -17,7 +17,6 @@ D3D11_VIEWPORT				g_Viewport;
 HRESULT g_hr;
 
 ID3D11Buffer*				g_d3dVertexBuffer = nullptr;
-ID3D11Buffer*				g_d3dIndexBuffer = nullptr;
 ID3D11Buffer*				g_d3dConstantBuffer = nullptr;
 
 ID3D11Resource*				g_diffuseTex = nullptr;
@@ -26,6 +25,7 @@ ID3D11ShaderResourceView*	g_diffuseView = nullptr;
 ID3D11SamplerState*			g_d3dSamplerState = nullptr;
 
 ID3D11VertexShader*			g_d3dVertexShader = nullptr;
+ID3D11GeometryShader*		g_d3dGeometryShader = nullptr;
 ID3D11PixelShader*			g_d3dPixelShader = nullptr;
 
 ID3D11InputLayout*			g_d3dInputLayout = nullptr;

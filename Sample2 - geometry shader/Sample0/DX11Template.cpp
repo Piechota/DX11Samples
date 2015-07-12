@@ -16,7 +16,7 @@ bool LoadResources()
 	SecureZeroMemory(&vertexBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.ByteWidth = sizeof(VertexPosColor) * _countof(g_Vertices);
+	vertexBufferDesc.ByteWidth = sizeof(XMFLOAT3) * _countof(g_Vertices);
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 
@@ -26,18 +26,6 @@ bool LoadResources()
 	resourceData.pSysMem = g_Vertices;
 
 	g_hr = g_d3dDevice->CreateBuffer(&vertexBufferDesc, &resourceData, &g_d3dVertexBuffer);
-	if (FAILED(g_hr)) return false;
-
-	D3D11_BUFFER_DESC indexBufferDesc;
-	SecureZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
-
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.ByteWidth = sizeof(WORD) * _countof(g_Indicies);
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	resourceData.pSysMem = g_Indicies;
-
-	g_hr = g_d3dDevice->CreateBuffer(&indexBufferDesc, &resourceData, &g_d3dIndexBuffer);
 	if (FAILED(g_hr)) return false;
 
 	g_hr = CreateDDSTextureFromFileEx(
@@ -55,7 +43,7 @@ bool CreateBuffers()
 	SecureZeroMemory(&constantBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	constantBufferDesc.ByteWidth = sizeof(XMMATRIX) * 2;
+	constantBufferDesc.ByteWidth = sizeof(XMMATRIX);
 	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 
@@ -89,21 +77,24 @@ bool LoadShaders()
 #if DEBUG || _DEBUG
 	shaderFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
-
+	ID3DBlob* error;
 	ID3DBlob* vertexShaderBlob;
 
 	g_hr = D3DCompileFromFile(
 		L"C:/Users/Konrad/Documents/DX11Samples/Sample2 - geometry shader/Sample0/color.hlsl", NULL, NULL, "VS", "vs_5_0",
-		shaderFlags, 0, &vertexShaderBlob, NULL);
-	if (FAILED(g_hr)) return false;
-
+		shaderFlags, 0, &vertexShaderBlob, &error);
+	if (FAILED(g_hr)) 
+	{
+		D3DWriteBlobToFile(error, L"shit.txt", true);
+		SafeRelease(error);
+		return false;
+	}
 	g_hr = g_d3dDevice->CreateVertexShader(vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), nullptr, &g_d3dVertexShader);
 	if (FAILED(g_hr)) return false;
 
 	D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[] =
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(VertexPosColor, texCoord), D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
 	g_hr = g_d3dDevice->CreateInputLayout(vertexLayoutDesc, _countof(vertexLayoutDesc), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &g_d3dInputLayout);
@@ -111,12 +102,33 @@ bool LoadShaders()
 
 	SafeRelease(vertexShaderBlob);
 
+	ID3DBlob* geometryShaderBlob;
+
+	g_hr = D3DCompileFromFile(
+		L"C:/Users/Konrad/Documents/DX11Samples/Sample2 - geometry shader/Sample0/color.hlsl", NULL, NULL, "GS", "gs_5_0",
+		shaderFlags, 0, &geometryShaderBlob, &error);
+	if (FAILED(g_hr))
+	{
+		D3DWriteBlobToFile(error, L"shit.txt", true);
+		SafeRelease(error);
+		return false;
+	}
+	g_hr = g_d3dDevice->CreateGeometryShader(geometryShaderBlob->GetBufferPointer(), geometryShaderBlob->GetBufferSize(), nullptr, &g_d3dGeometryShader);
+	if (FAILED(g_hr)) return false;
+
+	SafeRelease(geometryShaderBlob);
+
 	ID3DBlob* pixelShaderBlob;
 
 	g_hr = D3DCompileFromFile(
 		L"C:/Users/Konrad/Documents/DX11Samples/Sample2 - geometry shader/Sample0/color.hlsl", NULL, NULL, "PS", "ps_5_0",
-		shaderFlags, 0, &pixelShaderBlob, NULL);
-	if (FAILED(g_hr)) return false;
+		shaderFlags, 0, &pixelShaderBlob, &error);
+	if (FAILED(g_hr))
+	{
+		D3DWriteBlobToFile(error, L"shit.txt", true);
+		SafeRelease(error);
+		return false;
+	}
 	g_hr = g_d3dDevice->CreatePixelShader(pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize(), nullptr, &g_d3dPixelShader);
 	if (FAILED(g_hr)) return false;
 
@@ -133,7 +145,7 @@ void PreRendering()
 	g_worldMatrix = XMMatrixRotationY(XMConvertToRadians(20.f));
 	g_projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(45.f), aWH, 0.1f, 10.f);
 
-	g_d3dDeviceContext->VSSetConstantBuffers(0, 1, &g_d3dConstantBuffer);
+	g_d3dDeviceContext->GSSetConstantBuffers(0, 1, &g_d3dConstantBuffer);
 
 	g_d3dDeviceContext->RSSetState(g_d3dRasterizerState);
 	g_d3dDeviceContext->RSSetViewports(1, &g_Viewport);
@@ -144,15 +156,15 @@ void PreRendering()
 
 void PreBoxDraw()
 {
-	const UINT vertexStride = sizeof(VertexPosColor);
+	const UINT vertexStride = sizeof(XMFLOAT3);
 	const UINT offset = 0;
 
 	g_d3dDeviceContext->IASetVertexBuffers(0, 1, &g_d3dVertexBuffer, &vertexStride, &offset);
 	g_d3dDeviceContext->IASetInputLayout(g_d3dInputLayout);
-	g_d3dDeviceContext->IASetIndexBuffer(g_d3dIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
-	g_d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	g_d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	g_d3dDeviceContext->VSSetShader(g_d3dVertexShader, nullptr, 0);
+	g_d3dDeviceContext->GSSetShader(g_d3dGeometryShader, nullptr, 0);
 	g_d3dDeviceContext->PSSetShader(g_d3dPixelShader, nullptr, 0);
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
@@ -174,16 +186,17 @@ void DrawBox()
 	memcpy(mappedResource.pData, &matrices, sizeof(matrices));
 	g_d3dDeviceContext->Unmap(g_d3dConstantBuffer, 0);
 
-	g_d3dDeviceContext->DrawIndexed(_countof(g_Indicies), 0, 0);
+	g_d3dDeviceContext->Draw(_countof(g_Vertices), 0);
 	g_d3dSwapChain->Present(0, 0);
 }
 void PostRendering()
 {
 	SafeRelease(g_d3dConstantBuffer);
-	SafeRelease(g_d3dIndexBuffer);
 	SafeRelease(g_d3dVertexBuffer);
 	SafeRelease(g_d3dInputLayout);
+
 	SafeRelease(g_d3dVertexShader);
+	SafeRelease(g_d3dGeometryShader);
 	SafeRelease(g_d3dPixelShader);
 
 	SafeRelease(g_d3dSamplerState);
